@@ -1,0 +1,86 @@
+Build a full-stack web application called "TruckLink" — a trucking/logistics aggregator platform similar to Porter, but for regional transport AGENCIES (not individual drivers). Build it completely, end to end, fully working, not a demo/mockup.
+
+TECH STACK (use exactly this):
+- Frontend: React (with Vite) + Tailwind CSS
+- Backend: Node.js + Express (REST API)
+- Database + Auth + Realtime + Storage: Supabase (free tier)
+- Maps/Routing: OpenRouteService (free, no API key limits) for route + distance calculation
+- Deployment: Keep it running on Replit with a working live preview URL
+
+THREE USER ROLES (single login system, role-based redirect after login):
+1. CUSTOMER — books trucks, tracks live location, pays, verifies delivery with OTP
+2. AGENCY — manages their fleet, drivers, sees bookings, views earnings
+3. DRIVER — accepts trips, navigates, uploads proof of delivery (POD)
+
+Use normal email + password login (Supabase Auth). After signup, ask the user to pick a role (Customer / Agency / Driver). Store role in a "profiles" table linked to Supabase auth user id.
+
+DATABASE SCHEMA (create these tables in Supabase, with proper foreign keys):
+- profiles (id, name, email, role, phone, created_at)
+- agencies (id, owner_id -> profiles, agency_name, gst_number, address, verified boolean)
+- trucks (id, agency_id -> agencies, truck_number, type [Small/Medium/Big], body_type [Open/Closed], has_ac boolean, capacity_kg, status [available/on_trip/maintenance])
+- drivers (id, profile_id -> profiles, agency_id -> agencies, license_number, license_expiry, rc_doc_url, insurance_doc_url, license_doc_url)
+- bookings (id, customer_id -> profiles, agency_id -> agencies, truck_id -> trucks, driver_id -> drivers, pickup_address, pickup_lat, pickup_lng, drop_address, drop_lat, drop_lng, distance_km, base_fare, toll_charge, overtime_charge, total_fare, status [pending/matched/in_transit/completed/cancelled], otp_code, created_at)
+- multi_stops (id, booking_id -> bookings, stop_address, stop_lat, stop_lng, stop_order, status)
+- payments (id, booking_id -> bookings, amount, payment_method, status [held_in_escrow/released/refunded], razorpay_order_id, created_at)
+- co_load_groups (id, truck_id -> trucks, total_capacity_used, status)
+- co_load_bookings (id, co_load_group_id -> co_load_groups, booking_id -> bookings, fare_share_percent)
+- live_locations (id, driver_id -> drivers, booking_id -> bookings, lat, lng, updated_at) — use Supabase Realtime on this table
+- waiting_timers (id, booking_id -> bookings, arrived_at, loading_started_at, free_minutes default 45, overtime_minutes, overtime_charge)
+
+FEATURES TO BUILD (all must actually function, not just UI):
+
+1. AUTH & ONBOARDING
+   - Signup/login with Supabase Auth (email + password)
+   - Role selection after first signup
+   - Protected routes: customer can't access agency dashboard, etc.
+
+2. CUSTOMER APP
+   - Booking form: pickup address, drop address (with autocomplete or lat/lng input), truck type filter (size, open/closed, AC), scheduled or instant
+   - Fare estimate shown BEFORE confirming (base fare + distance from OpenRouteService + estimated toll)
+   - Live map showing truck location during trip (Supabase Realtime subscription to live_locations table)
+   - OTP screen at delivery — customer enters OTP given by driver, this triggers payment release from escrow (update payments.status to 'released')
+   - Booking history page
+   - Multi-stop delivery option (add up to 4 stops)
+   - Co-loading option: if load is small, show "Share truck & save cost" option that matches with another small booking going the same direction
+
+3. AGENCY APP (dashboard)
+   - Add/edit/remove trucks (with type tagging: size, open/closed, AC)
+   - Add/edit/remove drivers, upload their documents (RC, insurance, license) to Supabase Storage, with expiry date fields and a visual "expiring soon" warning badge (within 30 days)
+   - View all incoming bookings, assign an available truck+driver automatically based on nearest available match (simple distance-based matching using truck's last known lat/lng vs pickup lat/lng)
+   - Earnings dashboard: total completed trips, total earnings, pending payouts
+   - Sub-user management: agency owner can invite dispatchers with limited access
+
+4. DRIVER APP
+   - See assigned trip details, accept/reject
+   - "Start Trip" button that starts sending live GPS location every 10 seconds to Supabase (use browser geolocation API) into live_locations table
+   - Waiting timer: when driver marks "Arrived at pickup", start a 45-minute free timer. After 45 mins, auto-calculate overtime charge (e.g. ₹2/min) and add to booking's overtime_charge field
+   - Generate a 4-digit OTP for the customer at delivery, driver enters same OTP driver-side to confirm match, marks booking as completed
+   - Upload Proof of Delivery (POD) photo to Supabase Storage
+
+5. PRICING ENGINE (backend logic, Node/Express endpoint)
+   - Calculate: base_fare (fixed) + (distance_km * rate_per_km based on truck size) + toll_charge (flat estimate) + overtime_charge (from waiting_timers)
+   - Generate a simple GST-compliant invoice (PDF or clean HTML page) after trip completion, listing agency GST number, fare breakdown, 5% GST added
+
+6. CO-LOADING ALGORITHM (backend logic)
+   - When a new small booking comes in, check if there's an existing booking on a truck going in a similar direction (compare pickup/drop lat-lng within a reasonable radius, e.g. 5km) with unused capacity
+   - If match found, offer both customers a discounted fare split proportionally by (their load volume / total truck capacity used)
+   - Store the match in co_load_groups and co_load_bookings tables
+
+7. PAYMENTS (use Razorpay TEST MODE — free, no real money)
+   - Customer "pays" at booking confirmation, money marked as held_in_escrow in payments table
+   - Only released (status = released) after OTP verification success
+
+DESIGN REQUIREMENTS:
+- Clean, modern UI using Tailwind CSS
+- Mobile-responsive (customer and driver apps should look good on phone screens, agency dashboard can be desktop-first)
+- Use a dark sidebar for Agency dashboard, simple card-based UI for Customer app
+- Use loading states, error messages, and success toasts for every action (don't leave blank screens)
+
+IMPORTANT — DO NOT SKIP:
+- Actually connect Supabase (ask me for my Supabase project URL and anon key if needed, or create a new Supabase project via Replit's Supabase integration if available)
+- Actually wire up OpenRouteService for real distance calculation (free API, no key required for basic usage, or use their free-tier key)
+- Make sure Realtime GPS tracking actually updates live on the map, not just static
+- Test the full flow yourself after building: signup as customer → book → signup as agency → assign truck/driver → signup as driver → start trip → complete with OTP → verify payment status changes
+- Give me working login credentials or a way to test all 3 roles after you're done building
+
+Build this fully, step by step, and tell me clearly what free API keys or accounts I personally need to create (Supabase, OpenRouteService, Razorpay test mode) and where to paste them into Replit Secrets.
