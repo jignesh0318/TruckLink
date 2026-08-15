@@ -1,15 +1,16 @@
-# [Project name]
+# TruckLink
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+TruckLink is a regional logistics workspace connecting customers, transport agencies, and drivers around booking, dispatch, live trip progress, and delivery completion.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
+- `pnpm --filter @workspace/trucklink run dev` — run the TruckLink web app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — the managed PostgreSQL connection string
 
 ## Stack
 
@@ -22,23 +23,31 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/trucklink/src/` — role entry, customer, agency, fleet, and driver screens
+- `artifacts/api-server/src/routes/trucklink.ts` — TruckLink session, booking, fleet, trip, location, and pricing routes
+- `lib/api-spec/openapi.yaml` — source of truth for the API contract
+- `lib/db/src/schema/index.ts` — PostgreSQL schema for profiles, agencies, fleet, bookings, payments, and live locations
+- `lib/api-client-react/src/generated/` — generated React Query hooks and types
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first runnable build uses the managed PostgreSQL database and generated API contracts so the full workflow works without requiring an external service connection.
+- Session entry is role-based and uses an HTTP-only session cookie; the API keeps the integration boundary ready for a later Supabase Auth migration.
+- Booking payment is modeled as escrow-held until delivery OTP verification changes both the booking and payment status to released.
+- Live trip location is persisted and polled through the API, leaving the frontend ready to swap in Supabase Realtime once that connection is authorized.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Customers can estimate and book a truck, see active trips and live location, review history, and complete delivery with an OTP. Agencies can review incoming work, assign fleet resources, view earnings, and manage trucks and drivers. Drivers can view assigned trips, update trip status, and send live location.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the product oriented around three distinct workspaces: customer, agency, and driver.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen` before using generated hooks or API Zod schemas.
+- Use the generated API hooks in the frontend and the shared PostgreSQL schema in the backend.
 
 ## Pointers
 

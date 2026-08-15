@@ -10,6 +10,16 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Demo role-based access for the TruckLink workspace
+  - name: customer
+    description: Customer booking and tracking workflows
+  - name: agency
+    description: Fleet and booking operations for transport agencies
+  - name: driver
+    description: Driver trip execution workflows
+  - name: operations
+    description: Pricing, matching, and operational summaries
 paths:
   /healthz:
     get:
@@ -24,7 +34,313 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/session:
+    post:
+      operationId: createSession
+      tags: [auth]
+      summary: Enter TruckLink as a role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionInput"
+      responses:
+        "200":
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Get the current workspace session
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+    delete:
+      operationId: deleteSession
+      tags: [auth]
+      summary: End the current session
+      responses:
+        "204":
+          description: Session ended
+  /customer/summary:
+    get:
+      operationId: getCustomerSummary
+      tags: [customer]
+      summary: Customer dashboard summary
+      responses:
+        "200":
+          description: Customer summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerSummary"
+  /customer/bookings:
+    get:
+      operationId: listCustomerBookings
+      tags: [customer]
+      summary: List customer bookings
+      responses:
+        "200":
+          description: Customer bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+    post:
+      operationId: createBooking
+      tags: [customer]
+      summary: Create a booking and hold payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Created booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /customer/bookings/{bookingId}:
+    get:
+      operationId: getCustomerBooking
+      tags: [customer]
+      summary: Get a customer booking
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: Booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /customer/bookings/{bookingId}/verify-otp:
+    post:
+      operationId: verifyDeliveryOtp
+      tags: [customer]
+      summary: Verify the delivery OTP and release escrow
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpInput"
+      responses:
+        "200":
+          description: Completed booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /customer/bookings/{bookingId}/location:
+    get:
+      operationId: getBookingLocation
+      tags: [customer]
+      summary: Get the latest driver location
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: Latest location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveLocation"
+  /agency/summary:
+    get:
+      operationId: getAgencySummary
+      tags: [agency]
+      summary: Agency dashboard summary
+      responses:
+        "200":
+          description: Agency summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgencySummary"
+  /agency/bookings:
+    get:
+      operationId: listAgencyBookings
+      tags: [agency]
+      summary: List incoming and active agency bookings
+      responses:
+        "200":
+          description: Agency bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+  /agency/bookings/{bookingId}/assign:
+    post:
+      operationId: assignBooking
+      tags: [agency]
+      summary: Assign the nearest available truck and driver
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: Assigned booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /agency/fleet:
+    get:
+      operationId: listFleet
+      tags: [agency]
+      summary: List trucks and drivers
+      responses:
+        "200":
+          description: Fleet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fleet"
+  /agency/trucks:
+    post:
+      operationId: createTruck
+      tags: [agency]
+      summary: Add a truck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TruckInput"
+      responses:
+        "201":
+          description: Truck
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Truck"
+  /agency/drivers:
+    post:
+      operationId: createDriver
+      tags: [agency]
+      summary: Add a driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverInput"
+      responses:
+        "201":
+          description: Driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+  /driver/summary:
+    get:
+      operationId: getDriverSummary
+      tags: [driver]
+      summary: Driver dashboard summary
+      responses:
+        "200":
+          description: Driver summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverSummary"
+  /driver/trips:
+    get:
+      operationId: listDriverTrips
+      tags: [driver]
+      summary: List assigned driver trips
+      responses:
+        "200":
+          description: Driver trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+  /driver/trips/{bookingId}/status:
+    post:
+      operationId: updateTripStatus
+      tags: [driver]
+      summary: Update the current trip status
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripStatusInput"
+      responses:
+        "200":
+          description: Updated trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /driver/trips/{bookingId}/location:
+    post:
+      operationId: updateTripLocation
+      tags: [driver]
+      summary: Send a live trip location
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationInput"
+      responses:
+        "200":
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveLocation"
+  /operations/estimate:
+    post:
+      operationId: estimateFare
+      tags: [operations]
+      summary: Estimate fare using route distance and truck size
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimateInput"
+      responses:
+        "200":
+          description: Fare estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FareEstimate"
 components:
+  parameters:
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +349,207 @@ components:
           type: string
       required:
         - status
+    SessionInput:
+      type: object
+      required: [role, name]
+      properties:
+        role:
+          type: string
+          enum: [customer, agency, driver]
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+    Session:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role:
+          type: string
+          enum: [customer, agency, driver]
+        agency_name: { type: ["string", "null"] }
+    BookingInput:
+      type: object
+      required: [pickup_address, drop_address, truck_type, body_type, has_ac]
+      properties:
+        pickup_address: { type: string, minLength: 3 }
+        drop_address: { type: string, minLength: 3 }
+        pickup_lat: { type: number }
+        pickup_lng: { type: number }
+        drop_lat: { type: number }
+        drop_lng: { type: number }
+        truck_type:
+          type: string
+          enum: [Small, Medium, Big]
+        body_type:
+          type: string
+          enum: [Open, Closed]
+        has_ac: { type: boolean }
+        scheduled_for: { type: ["string", "null"], format: date-time }
+        stops:
+          type: array
+          maxItems: 4
+          items: { type: string }
+        co_load: { type: boolean }
+    Booking:
+      type: object
+      required:
+        [id, pickup_address, drop_address, truck_type, status, distance_km, total_fare, created_at]
+      properties:
+        id: { type: string }
+        pickup_address: { type: string }
+        drop_address: { type: string }
+        truck_type: { type: string }
+        body_type: { type: string }
+        has_ac: { type: boolean }
+        distance_km: { type: number }
+        base_fare: { type: number }
+        toll_charge: { type: number }
+        overtime_charge: { type: number }
+        total_fare: { type: number }
+        status:
+          type: string
+          enum: [pending, matched, in_transit, completed, cancelled]
+        payment_status:
+          type: string
+          enum: [held_in_escrow, released, refunded]
+        otp_code: { type: ["string", "null"] }
+        driver_name: { type: ["string", "null"] }
+        truck_number: { type: ["string", "null"] }
+        agency_name: { type: ["string", "null"] }
+        created_at: { type: string, format: date-time }
+        stops:
+          type: array
+          items: { type: string }
+    OtpInput:
+      type: object
+      required: [otp]
+      properties:
+        otp: { type: string, minLength: 4, maxLength: 4 }
+    LiveLocation:
+      type: object
+      required: [booking_id, lat, lng, updated_at]
+      properties:
+        booking_id: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        updated_at: { type: string, format: date-time }
+    LocationInput:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat: { type: number }
+        lng: { type: number }
+    TripStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [in_transit, completed, cancelled]
+    TruckInput:
+      type: object
+      required: [truck_number, type, body_type, has_ac, capacity_kg]
+      properties:
+        truck_number: { type: string, minLength: 3 }
+        type:
+          type: string
+          enum: [Small, Medium, Big]
+        body_type:
+          type: string
+          enum: [Open, Closed]
+        has_ac: { type: boolean }
+        capacity_kg: { type: number, minimum: 1 }
+    Truck:
+      allOf:
+        - $ref: "#/components/schemas/TruckInput"
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string }
+            status:
+              type: string
+              enum: [available, on_trip, maintenance]
+    DriverInput:
+      type: object
+      required: [name, phone, license_number, license_expiry]
+      properties:
+        name: { type: string, minLength: 2 }
+        phone: { type: string, minLength: 7 }
+        license_number: { type: string, minLength: 4 }
+        license_expiry: { type: string, format: date }
+    Driver:
+      allOf:
+        - $ref: "#/components/schemas/DriverInput"
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string }
+            status:
+              type: string
+              enum: [available, on_trip]
+            expiring_soon: { type: boolean }
+    Fleet:
+      type: object
+      required: [trucks, drivers]
+      properties:
+        trucks:
+          type: array
+          items: { $ref: "#/components/schemas/Truck" }
+        drivers:
+          type: array
+          items: { $ref: "#/components/schemas/Driver" }
+    CustomerSummary:
+      type: object
+      required: [active_count, completed_count, total_spend, active_booking]
+      properties:
+        active_count: { type: number }
+        completed_count: { type: number }
+        total_spend: { type: number }
+        active_booking:
+          anyOf:
+            - $ref: "#/components/schemas/Booking"
+            - type: "null"
+    AgencySummary:
+      type: object
+      required: [active_count, completed_count, total_earnings, pending_payout, completion_rate]
+      properties:
+        active_count: { type: number }
+        completed_count: { type: number }
+        total_earnings: { type: number }
+        pending_payout: { type: number }
+        completion_rate: { type: number }
+    DriverSummary:
+      type: object
+      required: [today_count, completed_count, today_earnings, active_trip]
+      properties:
+        today_count: { type: number }
+        completed_count: { type: number }
+        today_earnings: { type: number }
+        active_trip:
+          anyOf:
+            - $ref: "#/components/schemas/Booking"
+            - type: "null"
+    EstimateInput:
+      type: object
+      required: [pickup_address, drop_address, truck_type]
+      properties:
+        pickup_address: { type: string, minLength: 3 }
+        drop_address: { type: string, minLength: 3 }
+        truck_type:
+          type: string
+          enum: [Small, Medium, Big]
+    FareEstimate:
+      type: object
+      required: [distance_km, base_fare, toll_charge, gst, total_fare]
+      properties:
+        distance_km: { type: number }
+        base_fare: { type: number }
+        toll_charge: { type: number }
+        gst: { type: number }
+        total_fare: { type: number }
 

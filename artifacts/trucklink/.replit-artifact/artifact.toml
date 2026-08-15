@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "TruckLink"
+description = "A full-stack regional logistics platform for customers, transport agencies, and drivers to book, manage, track, and complete truck deliveries."
+version = "1.0.0"
+id = "artifacts/trucklink"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24534
+
+[services.development]
+run = "pnpm --filter @workspace/trucklink run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trucklink", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/trucklink/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24534"
+BASE_PATH = "/"

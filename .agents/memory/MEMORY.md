@@ -1,0 +1,1 @@
+- [TruckLink integration boundary](trucklink-integrations.md) — first runnable build uses managed Postgres/local sessions; external Supabase services remain intentionally unconnected.

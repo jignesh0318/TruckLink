@@ -3,10 +3,14 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "dev": "node ./scripts/dev.mjs",
+    "dev:api": "node ./artifacts/api-server/build.mjs && node --enable-source-maps --env-file-if-exists=.env ./artifacts/api-server/dist/index.mjs",
+    "dev:web": "vite --config ./artifacts/trucklink/vite.config.ts --host 0.0.0.0",
+    "build:api": "node ./artifacts/api-server/build.mjs",
+    "build:web": "vite build --config ./artifacts/trucklink/vite.config.ts",
+    "build": "node ./artifacts/api-server/build.mjs && vite build --config ./artifacts/trucklink/vite.config.ts",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "tsc -p ./artifacts/api-server/tsconfig.json --noEmit"
   },
   "private": true,
   "dependencies": {
